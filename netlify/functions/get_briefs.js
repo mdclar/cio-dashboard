@@ -23,7 +23,7 @@ exports.handler = async (event) => {
     const wantHistory = String(params.history || '').toLowerCase() === 'true';
 
     try {
-        const store = getStore('cio_dashboard');
+        const store = getStore({ name: 'cio_dashboard', siteID: process.env.NETLIFY_SITE_ID, token: process.env.NETLIFY_BLOBS_TOKEN });
 
         if (wantHistory) {
             const history = (await store.get('brief:history', { type: 'json' })) || [];

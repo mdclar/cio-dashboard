@@ -22,7 +22,7 @@ exports.handler = async (event) => {
     const daysLimit = daysLimitRaw ? Math.max(1, parseInt(daysLimitRaw, 10) || 0) : null;
 
     try {
-        const store = getStore('cio_dashboard');
+        const store = getStore({ name: 'cio_dashboard', siteID: process.env.NETLIFY_SITE_ID, token: process.env.NETLIFY_BLOBS_TOKEN });
         const record = await store.get('calendar:latest', { type: 'json' });
 
         if (!record) {
