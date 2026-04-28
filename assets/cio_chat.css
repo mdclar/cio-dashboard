@@ -1,0 +1,323 @@
+/* CIO Chat Widget - matches dashboard design system */
+.cio-chat-toggle {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 999;
+  background: #1f1d1a;
+  color: #e8e4d8;
+  border: none;
+  padding: 14px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  writing-mode: vertical-rl;
+  border-radius: 4px 0 0 4px;
+  box-shadow: -2px 0 8px rgba(0,0,0,0.15);
+  transition: background 0.15s, color 0.15s;
+}
+.cio-chat-toggle:hover { background: #8b3a2f; }
+.cio-chat-toggle.open { display: none; }
+
+.cio-chat-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 100vw;
+  background: #1f1d1a;
+  color: #e8e4d8;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  transform: translateX(100%);
+  transition: transform 0.25s ease-out;
+  box-shadow: -4px 0 16px rgba(0,0,0,0.3);
+}
+.cio-chat-panel.open { transform: translateX(0); }
+
+.cio-chat-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid #2e2c28;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.cio-chat-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.cio-chat-subtitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #a8a298;
+  margin-top: 2px;
+}
+.cio-chat-actions { display: flex; gap: 6px; }
+.cio-chat-btn {
+  background: transparent;
+  border: 1px solid #2e2c28;
+  color: #a8a298;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 6px 10px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.1s;
+}
+.cio-chat-btn:hover { color: #e8e4d8; border-color: #d8a85a; }
+.cio-chat-btn.danger:hover { color: #e8a890; border-color: #b3402a; }
+
+.cio-chat-mode {
+  padding: 10px 20px;
+  border-bottom: 1px solid #2e2c28;
+  display: flex;
+  gap: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.cio-mode-tab {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #2e2c28;
+  color: #a8a298;
+  padding: 7px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.cio-mode-tab.active { background: #2e2c28; color: #d8a85a; border-color: #d8a85a; }
+.cio-mode-tab:hover:not(.active) { color: #e8e4d8; }
+
+.cio-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cio-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 92%;
+}
+.cio-msg.user { align-self: flex-end; align-items: flex-end; }
+.cio-msg.assistant { align-self: flex-start; }
+.cio-msg-role {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #a8a298;
+  margin-bottom: 4px;
+}
+.cio-msg.assistant .cio-msg-role { color: #d8a85a; }
+.cio-msg-bubble {
+  padding: 10px 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  border-radius: 8px;
+}
+.cio-msg.user .cio-msg-bubble {
+  background: #2e2c28;
+  color: #e8e4d8;
+  border-radius: 8px 8px 2px 8px;
+}
+.cio-msg.assistant .cio-msg-bubble {
+  background: rgba(255,255,255,0.03);
+  border-left: 2px solid #d8a85a;
+  border-radius: 0 8px 8px 8px;
+}
+.cio-msg-bubble p { margin: 0 0 8px 0; }
+.cio-msg-bubble p:last-child { margin-bottom: 0; }
+.cio-msg-bubble strong { color: #d8a85a; font-weight: 600; }
+.cio-msg-bubble em { color: #c8d4a8; font-style: italic; }
+.cio-msg-bubble code {
+  background: #2e2c28;
+  color: #d8a85a;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+.cio-msg-bubble pre {
+  background: #2e2c28;
+  border-radius: 4px;
+  padding: 10px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.cio-msg-bubble pre code {
+  background: transparent;
+  padding: 0;
+}
+.cio-msg-bubble ul, .cio-msg-bubble ol {
+  margin: 4px 0 8px 18px;
+  padding: 0;
+}
+.cio-msg-bubble li { margin: 2px 0; }
+.cio-msg-bubble a { color: #d8a85a; text-decoration: underline; }
+
+.cio-typing {
+  align-self: flex-start;
+  color: #a8a298;
+  font-style: italic;
+  font-size: 12.5px;
+  padding: 8px 14px;
+}
+.cio-typing::after {
+  content: '...';
+  animation: dots 1.4s infinite;
+}
+@keyframes dots {
+  0%, 20% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.cio-chat-input-area {
+  border-top: 1px solid #2e2c28;
+  padding: 14px 16px 18px;
+  flex-shrink: 0;
+}
+.cio-chat-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.cio-chat-input {
+  flex: 1;
+  background: #2e2c28;
+  border: 1px solid #2e2c28;
+  color: #e8e4d8;
+  padding: 10px 12px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13.5px;
+  resize: none;
+  border-radius: 6px;
+  min-height: 40px;
+  max-height: 140px;
+  line-height: 1.5;
+  transition: border-color 0.1s;
+}
+.cio-chat-input:focus {
+  outline: none;
+  border-color: #d8a85a;
+}
+.cio-chat-input::placeholder { color: #a8a298; }
+
+.cio-icon-btn {
+  background: transparent;
+  border: 1px solid #2e2c28;
+  color: #a8a298;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.1s;
+}
+.cio-icon-btn:hover:not(:disabled) {
+  color: #d8a85a;
+  border-color: #d8a85a;
+}
+.cio-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.cio-icon-btn.recording {
+  color: #b3402a;
+  border-color: #b3402a;
+  animation: pulse-rec 1s infinite;
+}
+@keyframes pulse-rec {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.cio-send-btn {
+  background: #d8a85a;
+  color: #1f1d1a;
+  border: 1px solid #d8a85a;
+  padding: 0 16px;
+  height: 40px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 6px;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: all 0.1s;
+}
+.cio-send-btn:hover:not(:disabled) { background: #e8c87a; }
+.cio-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.cio-chat-hint {
+  margin-top: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #6a6863;
+}
+
+.cio-chat-empty {
+  text-align: center;
+  color: #a8a298;
+  padding: 40px 20px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.cio-chat-empty .big {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 22px;
+  color: #e8e4d8;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.cio-chat-error {
+  background: rgba(179, 64, 42, 0.15);
+  border-left: 2px solid #b3402a;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #e8a890;
+  margin: 8px 0;
+}
+
+@media (max-width: 768px) {
+  .cio-chat-panel {
+    width: 100vw;
+    height: 85vh;
+    top: auto;
+    bottom: 0;
+    transform: translateY(100%);
+    border-radius: 12px 12px 0 0;
+  }
+  .cio-chat-panel.open { transform: translateY(0); }
+  .cio-chat-toggle {
+    top: auto;
+    bottom: 20px;
+    right: 20px;
+    transform: none;
+    writing-mode: horizontal-tb;
+    border-radius: 24px;
+    padding: 12px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+}
