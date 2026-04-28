@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portfolio Mirror — CIO Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --ink-faint: #8a8a8a;
+    --rule: #d9d4c8;
+    --rule-soft: #ebe7dc;
+    --paper: #fdfcf8;
+    --row-hover: #f0ece0;
+    --accent: #8b3a2f;
+    --positive: #4a6b3f;
+    --negative: #9a3525;
+    --neutral: #6a6a6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap { max-width: 1500px; margin: 0 auto; padding: 48px clamp(20px, 3vw, 48px); }
+
+  .masthead {
+    border-top: 3px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding: 24px 0 18px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .masthead h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 40px);
+    letter-spacing: -0.02em;
+  }
+  .back-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-faint);
+  }
+  .back-link:hover { color: var(--accent); }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .timestamp {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .refresh-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+    padding: 10px 22px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .refresh-btn:hover:not(:disabled) { background: var(--accent); }
+  .refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+  .refresh-btn.spinning::after {
+    content: ' ●';
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .summary-stat {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 14px 18px;
+  }
+  .summary-stat .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 4px;
+  }
+  .summary-stat .value {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  .summary-stat .value.positive { color: var(--positive); }
+  .summary-stat .value.negative { color: var(--negative); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--paper);
+    font-size: 13px;
+  }
+  thead {
+    position: sticky;
+    top: 0;
+    background: var(--ink);
+    color: var(--bg);
+  }
+  thead th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 12px 10px;
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+    border-right: 1px solid #2e2c28;
+    white-space: nowrap;
+  }
+  thead th:last-child { border-right: none; }
+  thead th:hover { background: #2a2825; }
+  thead th .sort-arrow {
+    display: inline-block;
+    width: 8px;
+    margin-left: 4px;
+    color: #d8a85a;
+    opacity: 0;
+  }
+  thead th.sort-asc .sort-arrow,
+  thead th.sort-desc .sort-arrow { opacity: 1; }
+  thead th.sort-asc .sort-arrow::after { content: '▲'; }
+  thead th.sort-desc .sort-arrow::after { content: '▼'; }
+  thead th.numeric { text-align: right; }
+  thead th.numeric .sort-arrow { margin-left: 4px; }
+
+  tbody tr { border-bottom: 1px solid var(--rule-soft); transition: background 0.1s; }
+  tbody tr:hover { background: var(--row-hover); }
+  tbody td {
+    padding: 10px;
+    vertical-align: middle;
+    border-right: 1px solid var(--rule-soft);
+  }
+  tbody td:last-child { border-right: none; }
+  td.ticker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  td.numeric {
+    font-family: 'IBM Plex Mono', monospace;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  td.account {
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  td.company {
+    color: var(--ink-soft);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  td.positive { color: var(--positive); font-weight: 500; }
+  td.negative { color: var(--negative); font-weight: 500; }
+  td.neutral  { color: var(--neutral); }
+
+  tfoot td {
+    background: var(--rule-soft);
+    font-weight: 600;
+    padding: 14px 10px;
+    border-top: 2px solid var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  tfoot td.numeric.positive { color: var(--positive); }
+  tfoot td.numeric.negative { color: var(--negative); }
+
+  .loading, .empty-state {
+    color: var(--ink-faint);
+    font-style: italic;
+    padding: 60px 0;
+    text-align: center;
+  }
+  .error-msg {
+    color: var(--negative);
+    background: #fff5f3;
+    border-left: 4px solid var(--negative);
+    padding: 14px 18px;
+    margin: 20px 0;
+    font-size: 13px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--ink);
+    color: var(--bg);
+    padding: 14px 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+  .toast.error { background: var(--negative); }
+  .toast.success { background: var(--positive); }
+
+  footer {
+    margin-top: 36px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 800px) {
+    .wrap { padding: 24px 12px; }
+    table { font-size: 12px; }
+    tbody td { padding: 8px 6px; }
+    td.company { max-width: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Portfolio Mirror</h1>
+    <a class="back-link" href="/cio_dashboard.html">← BACK TO BRIEF</a>
+  </div>
+
+  <div class="toolbar">
+    <div class="timestamp" id="timestamp">No data yet — click Refresh to populate.</div>
+    <button class="refresh-btn" id="refresh-btn" onclick="refresh()">Refresh Live Prices</button>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div id="content" class="loading">Loading…</div>
+
+  <footer><span id="meta">—</span></footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ENDPOINTS = {
+  get: '/.netlify/functions/get_portfolio',
+  trigger: '/.netlify/functions/trigger_refresh'
+};
+
+let currentSort = { key: 'unrealized', dir: 'desc' };
+let currentData = null;
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type || '');
+  setTimeout(() => { el.className = 'toast ' + (type || ''); }, 3500);
+}
+function fmtMoney(v) {
+  if (v === null || v === undefined || Number.isNaN(v)) return '—';
+  const n = Number(v);
+  if (!Number.isFinite(n)) return '—';
+  const abs = Math.abs(n);
+  const formatted = abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (n < 0 ? '-$' : '$') + formatted;
+}
+function fmtMoneyShort(v) {
+  if (v === null || v === undefined || Number.isNaN(v)) return '—';
+  const n = Number(v);
+  if (!Number.isFinite(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return (n < 0 ? '-$' : '$') + (abs / 1_000_000).toFixed(2) + 'M';
+  if (abs >= 1_000) return (n < 0 ? '-$' : '$') + (abs / 1_000).toFixed(1) + 'K';
+  return (n < 0 ? '-$' : '$') + abs.toFixed(0);
+}
+function fmtPct(v) {
+  if (v === null || v === undefined || Number.isNaN(v)) return '—';
+  const n = Number(v);
+  if (!Number.isFinite(n)) return '—';
+  return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+}
+function fmtShares(v) {
+  if (v === null || v === undefined || Number.isNaN(v)) return '—';
+  const n = Number(v);
+  if (!Number.isFinite(n)) return '—';
+  return n.toLocaleString('en-US', { minimumFractionDigits: n % 1 === 0 ? 0 : 2, maximumFractionDigits: 4 });
+}
+function clsForNumber(v) {
+  if (v === null || v === undefined || Number.isNaN(v)) return 'neutral';
+  const n = Number(v);
+  if (!Number.isFinite(n) || n === 0) return 'neutral';
+  return n > 0 ? 'positive' : 'negative';
+}
+
+const COLUMNS = [
+  { key: 'ticker',         label: 'Ticker',         numeric: false, render: v => escapeHtml(v), cls: () => 'ticker' },
+  { key: 'name',           label: 'Company',        numeric: false, render: v => escapeHtml(v || '—'), cls: () => 'company' },
+  { key: 'shares',         label: 'Shares',         numeric: true,  render: v => fmtShares(v), cls: () => 'numeric' },
+  { key: 'avg_cost',       label: 'Avg Cost',       numeric: true,  render: v => fmtMoney(v), cls: () => 'numeric' },
+  { key: 'current_price',  label: 'Current Px',     numeric: true,  render: v => fmtMoney(v), cls: () => 'numeric' },
+  { key: 'day_change_pct', label: 'Day Δ%',         numeric: true,  render: v => fmtPct(v),   cls: v => 'numeric ' + clsForNumber(v) },
+  { key: 'total_cost',     label: 'Total Cost',     numeric: true,  render: v => fmtMoney(v), cls: () => 'numeric' },
+  { key: 'current_value',  label: 'Current Value',  numeric: true,  render: v => fmtMoney(v), cls: () => 'numeric' },
+  { key: 'unrealized',     label: 'Unrealized $',   numeric: true,  render: v => fmtMoney(v), cls: v => 'numeric ' + clsForNumber(v) },
+  { key: 'unrealized_pct', label: 'Unrealized %',   numeric: true,  render: v => fmtPct(v),   cls: v => 'numeric ' + clsForNumber(v) },
+  { key: 'account',        label: 'Account',        numeric: false, render: v => escapeHtml(v || '—'), cls: () => 'account' }
+];
+
+function sortPositions(positions) {
+  const { key, dir } = currentSort;
+  const col = COLUMNS.find(c => c.key === key);
+  const factor = dir === 'asc' ? 1 : -1;
+  return positions.slice().sort((a, b) => {
+    const av = a[key], bv = b[key];
+    if (col.numeric) {
+      const an = Number(av); const bn = Number(bv);
+      const aValid = Number.isFinite(an); const bValid = Number.isFinite(bn);
+      if (!aValid && !bValid) return 0;
+      if (!aValid) return 1; // nulls last
+      if (!bValid) return -1;
+      return (an - bn) * factor;
+    }
+    const as = String(av || '');
+    const bs = String(bv || '');
+    return as.localeCompare(bs) * factor;
+  });
+}
+
+function render() {
+  const contentEl = document.getElementById('content');
+  const summaryEl = document.getElementById('summary');
+  const tsEl = document.getElementById('timestamp');
+  const metaEl = document.getElementById('meta');
+
+  if (!currentData || currentData.empty || !Array.isArray(currentData.positions) || !currentData.positions.length) {
+    contentEl.classList.remove('loading');
+    contentEl.classList.add('empty-state');
+    contentEl.textContent = (currentData && currentData.message) || 'No portfolio data yet.';
+    summaryEl.innerHTML = '';
+    tsEl.textContent = 'No data yet — click Refresh to populate.';
+    metaEl.textContent = '—';
+    return;
+  }
+
+  // Summary tiles
+  const s = currentData.summary || {};
+  const tiles = [
+    { label: 'Positions',       value: s.total_positions ?? currentData.positions.length, cls: '' },
+    { label: 'Cost Basis',      value: fmtMoneyShort(s.total_cost_basis), cls: '' },
+    { label: 'Market Value',    value: fmtMoneyShort(s.total_market_value), cls: '' },
+    { label: 'Unrealized $',    value: fmtMoneyShort(s.total_unrealized), cls: clsForNumber(s.total_unrealized) },
+    { label: 'Unrealized %',    value: fmtPct(s.total_unrealized_pct), cls: clsForNumber(s.total_unrealized_pct) },
+    { label: 'Accounts',        value: s.account_count ?? '—', cls: '' }
+  ];
+  summaryEl.innerHTML = tiles.map(t => `
+    <div class="summary-stat">
+      <div class="label">${escapeHtml(t.label)}</div>
+      <div class="value ${escapeHtml(t.cls)}">${escapeHtml(t.value)}</div>
+    </div>
+  `).join('');
+
+  // Table
+  const sorted = sortPositions(currentData.positions);
+
+  const head = COLUMNS.map(c => {
+    const sortCls = currentSort.key === c.key ? 'sort-' + currentSort.dir : '';
+    const numericCls = c.numeric ? 'numeric' : '';
+    return `<th class="${numericCls} ${sortCls}" data-key="${escapeHtml(c.key)}">${escapeHtml(c.label)}<span class="sort-arrow"></span></th>`;
+  }).join('');
+
+  const body = sorted.map(p => {
+    return '<tr>' + COLUMNS.map(c => {
+      const v = p[c.key];
+      const cls = typeof c.cls === 'function' ? c.cls(v) : '';
+      return `<td class="${escapeHtml(cls)}">${c.render(v)}</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+
+  // Footer totals
+  const totalCost = currentData.positions.reduce((s, p) => s + (Number(p.total_cost) || 0), 0);
+  const totalValue = currentData.positions.reduce((s, p) => s + (Number(p.current_value) || 0), 0);
+  const totalUnreal = totalValue - totalCost;
+  const totalUnrealPct = totalCost > 0 ? (totalUnreal / totalCost) * 100 : 0;
+  const foot = `
+    <tr>
+      <td colspan="6" style="text-align:right">TOTALS</td>
+      <td class="numeric">${fmtMoney(totalCost)}</td>
+      <td class="numeric">${fmtMoney(totalValue)}</td>
+      <td class="numeric ${clsForNumber(totalUnreal)}">${fmtMoney(totalUnreal)}</td>
+      <td class="numeric ${clsForNumber(totalUnrealPct)}">${fmtPct(totalUnrealPct)}</td>
+      <td></td>
+    </tr>
+  `;
+
+  contentEl.classList.remove('loading', 'empty-state');
+  contentEl.innerHTML = `
+    <table>
+      <thead><tr>${head}</tr></thead>
+      <tbody>${body}</tbody>
+      <tfoot>${foot}</tfoot>
+    </table>
+  `;
+
+  // Wire sort handlers
+  contentEl.querySelectorAll('thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.getAttribute('data-key');
+      if (currentSort.key === key) {
+        currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort.key = key;
+        currentSort.dir = 'desc';
+      }
+      render();
+    });
+  });
+
+  // Timestamp
+  tsEl.textContent = currentData.timestamp_label
+    ? 'Live prices · ' + currentData.timestamp_label
+    : (currentData.saved_at ? 'Saved ' + new Date(currentData.saved_at).toLocaleString() : '—');
+
+  // Footer meta
+  const meta = [];
+  if (currentData.refresh_count != null) meta.push(currentData.refresh_count + ' tickers refreshed');
+  if (currentData.saved_at) meta.push('Saved ' + new Date(currentData.saved_at).toLocaleString());
+  metaEl.textContent = meta.join(' · ') || '—';
+}
+
+async function loadSnapshot() {
+  try {
+    const res = await fetch(ENDPOINTS.get, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    currentData = await res.json();
+    render();
+  } catch (e) {
+    document.getElementById('content').classList.remove('loading');
+    document.getElementById('content').innerHTML = `<div class="error-msg">Could not load portfolio: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function refresh() {
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled = true;
+  btn.classList.add('spinning');
+  btn.textContent = 'Refreshing';
+  toast('Triggering Beast workflow…', '');
+
+  try {
+    const res = await fetch(ENDPOINTS.trigger, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source: 'portfolio.html' })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.details || data.error || ('upstream ' + (data.upstream_status || '?')));
+    }
+    toast('Refresh complete · reloading data', 'success');
+    // Workflow already POSTed to save_portfolio before responding, so reload immediately
+    await loadSnapshot();
+  } catch (e) {
+    toast('Refresh failed: ' + e.message, 'error');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('spinning');
+    btn.textContent = 'Refresh Live Prices';
+  }
+}
+
+loadSnapshot();
+</script>
+</body>
+</html>

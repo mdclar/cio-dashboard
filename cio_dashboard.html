@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CIO Daily Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --ink-faint: #8a8a8a;
+    --rule: #d9d4c8;
+    --rule-soft: #ebe7dc;
+    --paper: #fdfcf8;
+    --side-bg: #1f1d1a;
+    --side-ink: #e8e4d8;
+    --side-ink-soft: #a8a298;
+    --side-rule: #2e2c28;
+    --accent: #8b3a2f;
+    --critical: #b3402a;
+    --high: #c87832;
+    --medium: #6b7a3a;
+    --strategic: #3a5a7a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    min-height: 100vh;
+  }
+  @media (max-width: 1100px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { display: none; }
+  }
+
+  aside {
+    background: var(--side-bg);
+    color: var(--side-ink);
+    padding: 28px 22px;
+    overflow-y: auto;
+    max-height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+  aside h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--side-ink);
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--side-rule);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  aside h2 a {
+    font-size: 10px;
+    color: var(--side-ink-soft);
+    letter-spacing: 0.1em;
+  }
+  aside h2 a:hover { color: var(--side-ink); }
+
+  .day {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed var(--side-rule);
+  }
+  .day:last-child { border-bottom: none; }
+  .day-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--side-ink-soft);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .day.today .day-label { color: var(--accent); font-weight: 500; }
+  .day.today .day-label::after { content: ' · TODAY'; }
+  .day .empty { color: var(--side-ink-soft); font-style: italic; font-size: 12px; }
+  .event {
+    font-size: 12.5px;
+    padding: 4px 0;
+    color: var(--side-ink);
+  }
+  .event .ticker {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    color: #d8a85a;
+    margin-right: 6px;
+  }
+  .event .ticker.held { color: #e8c87a; }
+  .event-name { color: var(--side-ink-soft); }
+  .event.economic .event-name { color: #c8d4a8; font-weight: 500; }
+  .event.dividend .event-name { color: #b8d4c8; }
+  .annotation {
+    display: block;
+    font-size: 11px;
+    color: var(--side-ink-soft);
+    margin-top: 2px;
+    padding-left: 14px;
+  }
+
+  .action-item {
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--side-ink-soft);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border-radius: 0 4px 4px 0;
+  }
+  .action-item.priority-Critical  { border-left-color: var(--critical); }
+  .action-item.priority-High      { border-left-color: var(--high); }
+  .action-item.priority-Medium    { border-left-color: var(--medium); }
+  .action-item.priority-Strategic { border-left-color: var(--strategic); }
+  .action-priority {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--side-ink-soft);
+    margin-bottom: 4px;
+  }
+  .action-title {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--side-ink);
+    margin-bottom: 4px;
+  }
+  .action-desc {
+    font-size: 12px;
+    color: var(--side-ink-soft);
+    line-height: 1.45;
+  }
+  .action-source {
+    font-size: 10px;
+    color: var(--side-ink-soft);
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  main {
+    padding: 56px clamp(28px, 6vw, 80px);
+    max-width: 920px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .masthead {
+    border-top: 3px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding: 24px 0 18px;
+    margin-bottom: 36px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .masthead h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 42px);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .masthead .subtitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-faint);
+  }
+
+  .take {
+    background: var(--paper);
+    border-left: 4px solid var(--accent);
+    padding: 20px 24px;
+    margin-bottom: 36px;
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 19px;
+    font-style: italic;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+  .take::before {
+    content: 'CIO TAKE';
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  section { margin-bottom: 36px; }
+  section h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  section p { margin-bottom: 10px; color: var(--ink); }
+  section ul { list-style: none; padding: 0; }
+  section ul li {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  section ul li:last-child { border-bottom: none; }
+
+  .posture {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    background: var(--ink);
+    color: var(--bg);
+    margin-right: 10px;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+  .stat {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 16px;
+  }
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 26px;
+    font-weight: 600;
+  }
+
+  .loading, .empty-state {
+    color: var(--ink-faint);
+    font-style: italic;
+    padding: 16px 0;
+  }
+  .empty-state-side {
+    color: var(--side-ink-soft);
+    font-style: italic;
+    padding: 16px 0;
+    font-size: 12.5px;
+  }
+  .error-msg {
+    color: #9a3525;
+    font-size: 12px;
+    padding: 8px 0;
+  }
+  footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .quick-links {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--side-rule);
+    font-size: 11px;
+    color: var(--side-ink-soft);
+    letter-spacing: 0.06em;
+  }
+  .quick-links a { display: block; padding: 4px 0; color: var(--side-ink); }
+  .quick-links a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside id="left-sidebar">
+    <h2>
+      <span>Events Calendar</span>
+      <a href="/calendar.html">FULL VIEW →</a>
+    </h2>
+    <div id="calendar-content" class="loading">Loading…</div>
+    <div class="quick-links">
+      <a href="/calendar.html">📅 30-Day Calendar</a>
+      <a href="/portfolio.html">💼 Portfolio Mirror</a>
+      <a href="/weekly_thesis.html">📊 Weekly Thesis</a>
+    </div>
+  </aside>
+
+  <main>
+    <div class="masthead">
+      <h1>Daily CIO Brief</h1>
+      <span class="subtitle" id="masthead-date">Loading…</span>
+    </div>
+
+    <div id="cio-take" class="loading">Loading brief…</div>
+
+    <div class="stats" id="stats"></div>
+
+    <section id="market-pulse-section" style="display:none;">
+      <h3>Market Pulse</h3>
+      <p id="market-pulse"></p>
+    </section>
+
+    <section id="macro-section" style="display:none;">
+      <h3>Macro Posture</h3>
+      <p><span class="posture" id="posture-pill"></span><span id="macro-posture-text"></span></p>
+    </section>
+
+    <section id="sector-section" style="display:none;">
+      <h3>Sector Rotation</h3>
+      <ul id="sector-list"></ul>
+    </section>
+
+    <section id="watch-section" style="display:none;">
+      <h3>Portfolio Watch</h3>
+      <ul id="watch-list"></ul>
+    </section>
+
+    <section id="cal-highlights-section" style="display:none;">
+      <h3>Today's Calendar Highlights</h3>
+      <ul id="cal-highlights"></ul>
+    </section>
+
+    <footer>
+      <span id="meta-info">—</span>
+    </footer>
+  </main>
+
+  <aside id="right-sidebar">
+    <h2>Recommended Actions</h2>
+    <div id="actions-content" class="loading">Loading…</div>
+  </aside>
+
+</div>
+
+<script>
+const ENDPOINTS = {
+  brief: '/.netlify/functions/get_briefs',
+  calendar: '/.netlify/functions/get_calendar?days=7',
+  actions: '/.netlify/functions/get_actions'
+};
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+function setEmpty(node, msg, sideClass) {
+  node.classList.remove('loading');
+  node.classList.add(sideClass || 'empty-state');
+  node.textContent = msg;
+}
+function setError(node, msg) {
+  node.classList.remove('loading');
+  node.innerHTML = '<div class="error-msg">' + escapeHtml(msg) + '</div>';
+}
+
+async function loadBrief() {
+  const takeEl = document.getElementById('cio-take');
+  try {
+    const res = await fetch(ENDPOINTS.brief, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.empty || (!data.cio_take && !data.market_pulse)) {
+      setEmpty(takeEl, data.message || 'No brief generated yet.');
+      document.getElementById('masthead-date').textContent = '—';
+      return;
+    }
+    const brief = data;
+
+    document.getElementById('masthead-date').textContent = brief.today_label || '';
+
+    if (brief.cio_take) {
+      takeEl.className = 'take';
+      takeEl.textContent = brief.cio_take;
+    } else {
+      setEmpty(takeEl, 'No CIO take available.');
+    }
+
+    const stats = [];
+    if (brief.portfolio_count != null)     stats.push(['Positions', brief.portfolio_count]);
+    if (brief.extreme_rsi_count != null)   stats.push(['Extreme RSI', brief.extreme_rsi_count]);
+    if (brief.near_stop_count != null)     stats.push(['Near Stop', brief.near_stop_count]);
+    if (brief.profit_taking_count != null) stats.push(['Profit Cands', brief.profit_taking_count]);
+    if (brief.market_posture)              stats.push(['Posture', brief.market_posture]);
+    document.getElementById('stats').innerHTML = stats.map(([k,v]) =>
+      `<div class="stat"><div class="stat-label">${escapeHtml(k)}</div><div class="stat-value">${escapeHtml(v)}</div></div>`
+    ).join('');
+
+    if (brief.market_pulse) {
+      document.getElementById('market-pulse-section').style.display = '';
+      document.getElementById('market-pulse').textContent = brief.market_pulse;
+    }
+
+    if (brief.macro_posture) {
+      document.getElementById('macro-section').style.display = '';
+      const m = brief.macro_posture;
+      const firstWord = m.split(/\s+/)[0];
+      document.getElementById('posture-pill').textContent = firstWord;
+      document.getElementById('macro-posture-text').textContent = ' ' + m.substring(firstWord.length).trim();
+    }
+
+    if (Array.isArray(brief.sector_rotation) && brief.sector_rotation.length) {
+      document.getElementById('sector-section').style.display = '';
+      document.getElementById('sector-list').innerHTML = brief.sector_rotation
+        .map(s => `<li>${escapeHtml(s)}</li>`).join('');
+    }
+
+    if (Array.isArray(brief.portfolio_watch) && brief.portfolio_watch.length) {
+      document.getElementById('watch-section').style.display = '';
+      document.getElementById('watch-list').innerHTML = brief.portfolio_watch
+        .map(s => `<li>${escapeHtml(s)}</li>`).join('');
+    }
+
+    if (Array.isArray(brief.calendar_highlights) && brief.calendar_highlights.length) {
+      document.getElementById('cal-highlights-section').style.display = '';
+      document.getElementById('cal-highlights').innerHTML = brief.calendar_highlights
+        .map(s => `<li>${escapeHtml(s)}</li>`).join('');
+    }
+
+    const meta = [];
+    if (brief.generated_at) meta.push('Generated ' + new Date(brief.generated_at).toLocaleString());
+    if (brief.data_source)  meta.push(brief.data_source);
+    document.getElementById('meta-info').textContent = meta.join(' · ') || '—';
+
+  } catch (e) {
+    setError(takeEl, 'Could not load brief: ' + e.message);
+  }
+}
+
+async function loadCalendar() {
+  const node = document.getElementById('calendar-content');
+  try {
+    const res = await fetch(ENDPOINTS.calendar, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.empty || !Array.isArray(data.days) || !data.days.length) {
+      setEmpty(node, data.message || 'No calendar data yet.', 'empty-state-side');
+      return;
+    }
+    node.classList.remove('loading');
+    node.innerHTML = data.days.map(day => {
+      const events = (day.events || []).map(ev => {
+        const cls = `event ${escapeHtml(ev.type || '')}`;
+        if (ev.type === 'earnings') {
+          const tickerCls = ev.held ? 'ticker held' : 'ticker';
+          const annot = ev.annotation ? `<span class="annotation">${escapeHtml(ev.annotation)}</span>` : '';
+          return `<div class="${cls}"><span class="${tickerCls}">${escapeHtml(ev.ticker)}</span><span class="event-name">${escapeHtml(ev.name)}</span>${annot}</div>`;
+        }
+        if (ev.type === 'dividend') {
+          const annot = ev.annotation ? `<span class="annotation">${escapeHtml(ev.annotation)}</span>` : '';
+          return `<div class="${cls}"><span class="ticker held">${escapeHtml(ev.ticker)}</span><span class="event-name">${escapeHtml(ev.name)}</span>${annot}</div>`;
+        }
+        return `<div class="${cls}"><span class="event-name">${escapeHtml(ev.name)}</span></div>`;
+      }).join('');
+      const body = events || '<div class="empty">No events</div>';
+      const todayCls = day.is_today ? 'day today' : 'day';
+      return `<div class="${todayCls}"><div class="day-label">${escapeHtml(day.label)}</div>${body}</div>`;
+    }).join('');
+  } catch (e) {
+    setError(node, 'Calendar load failed: ' + e.message);
+  }
+}
+
+async function loadActions() {
+  const node = document.getElementById('actions-content');
+  try {
+    const res = await fetch(ENDPOINTS.actions, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.empty || !Array.isArray(data.items) || !data.items.length) {
+      setEmpty(node, data.message || 'No actions flagged. Caretaker says hold.', 'empty-state-side');
+      return;
+    }
+    const order = { Critical: 0, High: 1, Medium: 2, Strategic: 3 };
+    const items = data.items.slice().sort((a,b) =>
+      (order[a.priority] ?? 9) - (order[b.priority] ?? 9)
+    );
+    node.classList.remove('loading');
+    node.innerHTML = items.map(it => `
+      <div class="action-item priority-${escapeHtml(it.priority || 'Medium')}">
+        <div class="action-priority">${escapeHtml(it.priority || 'Medium')}</div>
+        <div class="action-title">${escapeHtml(it.title || '')}</div>
+        <div class="action-desc">${escapeHtml(it.description || '')}</div>
+        ${it.source ? `<div class="action-source">via ${escapeHtml(it.source)}</div>` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    setError(node, 'Actions load failed: ' + e.message);
+  }
+}
+
+loadBrief();
+loadCalendar();
+loadActions();
+</script>
+</body>
+</html>
