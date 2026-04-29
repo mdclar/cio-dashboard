@@ -55,6 +55,54 @@
     color: var(--ink-faint);
   }
   .back-link:hover { color: var(--accent); }
+  .doc-card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    padding: 32px;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+  .doc-card .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 14px;
+  }
+  .doc-card .gen-time {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .doc-card .gen-detail {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 22px;
+  }
+  .doc-button {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg) !important;
+    padding: 14px 32px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .doc-button:hover {
+    background: #7a3128;
+    text-decoration: none !important;
+  }
+  .doc-button:before {
+    content: '↗ ';
+    margin-right: 4px;
+  }
   .pane {
     background: var(--paper);
     border: 1px solid var(--rule);
@@ -133,14 +181,6 @@ function escapeHtml(s) {
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[c]));
 }
-function renderField(label, value) {
-  if (value === undefined || value === null) return '';
-  // If it's a string, treat as HTML (legacy schema). If it's an object, JSON-pretty-print.
-  if (typeof value === 'string') {
-    return `<div class="pane"><h2>${escapeHtml(label)}</h2><div class="content">${value}</div></div>`;
-  }
-  return `<div class="pane"><h2>${escapeHtml(label)}</h2><pre class="json">${escapeHtml(JSON.stringify(value, null, 2))}</pre></div>`;
-}
 (async function() {
   const contentEl = document.getElementById('content');
   const metaEl = document.getElementById('meta');
@@ -155,11 +195,40 @@ function renderField(label, value) {
       return;
     }
     contentEl.classList.remove('loading');
-    contentEl.innerHTML = [
-      renderField('Macro Brief', data.macro),
-      renderField('Thesis Changes', data.thesisChanges),
-      renderField('Crypto', data.crypto)
-    ].filter(Boolean).join('') || '<div class="empty-state">No content fields populated.</div>';
+
+    const docUrl = data.doc_url || (data.metadata && data.metadata.doc_url) || null;
+    const genLabel = data.generatedLabel
+      || (data.metadata && data.metadata.generated_label)
+      || null;
+    const tickerCount = data.tickerCount
+      || (data.metadata && data.metadata.ticker_count)
+      || null;
+
+    let html = '';
+
+    // Top card: doc link + timestamp
+    if (docUrl) {
+      html += '<div class="doc-card">';
+      html += '<div class="label">Latest Weekly Thesis</div>';
+      if (genLabel) {
+        html += `<div class="gen-time">${escapeHtml(genLabel)}</div>`;
+      }
+      const detailParts = [];
+      if (tickerCount) detailParts.push(`${tickerCount} tickers analyzed`);
+      if (data.saved_at) detailParts.push(`saved ${new Date(data.saved_at).toLocaleString()}`);
+      if (detailParts.length) {
+        html += `<div class="gen-detail">${escapeHtml(detailParts.join(' · '))}</div>`;
+      }
+      html += `<a class="doc-button" href="${escapeHtml(docUrl)}" target="_blank" rel="noopener">Open Full Thesis Document</a>`;
+      html += '</div>';
+    } else {
+      html += '<div class="doc-card">';
+      html += '<div class="label">Weekly Thesis</div>';
+      html += '<div class="gen-detail">Document link not available — check Google Drive directly</div>';
+      html += '</div>';
+    }
+
+    contentEl.innerHTML = html;
 
     const meta = [];
     if (data.saved_at) meta.push('Saved ' + new Date(data.saved_at).toLocaleString());

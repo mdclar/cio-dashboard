@@ -1,6 +1,7 @@
 // POST /.netlify/functions/save_weekly_thesis
-// Preserves the existing schema: { macro, thesisChanges, crypto, metadata, timestamp }
+// Schema: { macro, thesisChanges, crypto, doc_url, metadata, timestamp }
 // macro/thesisChanges/crypto can be HTML strings (legacy) or structured JSON.
+// doc_url is the canonical Google Doc link for the full thesis.
 // Stores latest + 12-week history.
 
 const { getStore } = require('@netlify/blobs');
@@ -25,8 +26,8 @@ exports.handler = async (event) => {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'invalid_json', details: e.message }) };
     }
 
-    const { macro, thesisChanges, crypto, metadata, timestamp } = payload || {};
-    if (macro === undefined && thesisChanges === undefined && crypto === undefined) {
+    const { macro, thesisChanges, crypto, doc_url, metadata, timestamp } = payload || {};
+    if (macro === undefined && thesisChanges === undefined && crypto === undefined && !doc_url) {
         return { statusCode: 400, headers, body: JSON.stringify({ error: 'missing_content' }) };
     }
 
@@ -37,10 +38,13 @@ exports.handler = async (event) => {
             macro,
             thesisChanges,
             crypto,
+            doc_url,
             metadata,
             timestamp: timestamp || new Date().toISOString(),
             saved_at: new Date().toISOString(),
-            generatedDate: (metadata && metadata.generated_date) || new Date().toISOString().slice(0, 10)
+            generatedDate: (metadata && metadata.generated_date) || new Date().toISOString().slice(0, 10),
+            generatedLabel: (metadata && metadata.generated_label) || null,
+            tickerCount: (metadata && metadata.ticker_count) || null
         };
 
         await store.setJSON('weekly_thesis:latest', record);
@@ -49,7 +53,10 @@ exports.handler = async (event) => {
         if (!Array.isArray(history)) history = [];
         history.unshift({
             saved_at: record.saved_at,
-            generatedDate: record.generatedDate
+            generatedDate: record.generatedDate,
+            generatedLabel: record.generatedLabel,
+            tickerCount: record.tickerCount,
+            doc_url: record.doc_url
         });
         history = history.slice(0, 12);
         await store.setJSON('weekly_thesis:history', history);
