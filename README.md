@@ -76,3 +76,5 @@ After I modify the workflow + you activate it, click Refresh. You'll see:
 - **Refresh fails with "beast_timeout"** → Workflow took >60s. Could be TWS Bridge slow, or many tickers. Check n8n executions log.
 - **Table loads but Day Δ% is `—` for everything** → TWS Bridge `/price/{ticker}` doesn't include `dayChangePct` natively. The workflow can compute it from the Yahoo daily closes the Bridge fetches; if not, we'll add an FMP fallback.
 - **Numbers look stale** → The dashboard reads from Blobs (last save). If the workflow ran but didn't post to `save_portfolio`, only the sheet got updated. Check workflow execution log for the new HTTP node.
+
+<!-- Push pipeline test 2026-05-06 -->
