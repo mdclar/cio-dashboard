@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Weekly Thesis — CIO Brief</title>
+<title>Portfolio Briefs — CIO Brief</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -169,10 +169,10 @@
 <body>
 <div class="wrap">
   <div class="masthead">
-    <h1>Weekly Thesis</h1>
+    <h1>Portfolio Briefs</h1>
     <a class="back-link" href="/cio_dashboard.html">← BACK TO BRIEF</a>
   </div>
-  <div id="content" class="loading">Loading weekly thesis…</div>
+  <div id="content" class="loading">Loading Portfolio Briefs…</div>
   <footer><span id="meta">—</span></footer>
 </div>
 <script>
@@ -185,13 +185,13 @@ function escapeHtml(s) {
   const contentEl = document.getElementById('content');
   const metaEl = document.getElementById('meta');
   try {
-    const res = await fetch('/.netlify/functions/get_weekly_thesis', { cache: 'no-store' });
+    const res = await fetch('/.netlify/functions/get_portfolio_briefs', { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.empty) {
       contentEl.classList.remove('loading');
       contentEl.classList.add('empty-state');
-      contentEl.textContent = data.message || 'No weekly thesis published yet.';
+      contentEl.textContent = data.message || 'No Portfolio Briefs published yet.';
       return;
     }
     contentEl.classList.remove('loading');
@@ -209,7 +209,7 @@ function escapeHtml(s) {
     // Top card: doc link + timestamp
     if (docUrl) {
       html += '<div class="doc-card">';
-      html += '<div class="label">Latest Weekly Thesis</div>';
+      html += '<div class="label">Latest Portfolio Briefs</div>';
       if (genLabel) {
         html += `<div class="gen-time">${escapeHtml(genLabel)}</div>`;
       }
@@ -223,7 +223,7 @@ function escapeHtml(s) {
       html += '</div>';
     } else {
       html += '<div class="doc-card">';
-      html += '<div class="label">Weekly Thesis</div>';
+      html += '<div class="label">Portfolio Briefs</div>';
       html += '<div class="gen-detail">Document link not available — check Google Drive directly</div>';
       html += '</div>';
     }
@@ -236,7 +236,7 @@ function escapeHtml(s) {
     metaEl.textContent = meta.join(' · ') || '—';
   } catch (e) {
     contentEl.classList.remove('loading');
-    contentEl.innerHTML = `<div class="error-msg">Weekly thesis load failed: ${escapeHtml(e.message)}</div>`;
+    contentEl.innerHTML = `<div class="error-msg">Portfolio Briefs load failed: ${escapeHtml(e.message)}</div>`;
   }
 })();
 </script>
