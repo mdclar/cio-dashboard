@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIO Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#f6f4ef; --paper:#fffdf9; --ink:#241f1c; --accent:#8b3a2f;
+    --line:#e5e0d6; --muted:#6d6559; --pin:#b9852a;
+    --long:#2f6f4f; --long-bg:#e8f1ea; --cut:#a23b2c; --cut-bg:#f6e9e6; --chip-bg:#f6edd9; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',sans-serif;font-size:15px;line-height:1.6}
+  .wrap{max-width:860px;margin:0 auto;padding:0 20px 80px}
+  a{color:var(--accent);text-decoration:none}
+  header{padding:30px 0 18px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .back{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)}
+  .back:hover{color:var(--accent)}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;margin:12px 0 4px;letter-spacing:-.01em}
+  .meta{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)}
+  .actions{background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--pin);
+    border-radius:10px;padding:18px 20px;margin:18px 0}
+  .actions h2{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 12px}
+  .act{display:flex;gap:10px;align-items:baseline;padding:8px 0;border-bottom:1px dashed var(--line)}
+  .act:last-child{border-bottom:none}
+  .act .tk{font-family:'IBM Plex Mono',monospace;font-weight:600;min-width:110px}
+  .act .badge{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap}
+  .b-long{background:var(--long-bg);color:var(--long)} .b-cut{background:var(--cut-bg);color:var(--cut)}
+  .b-chip{background:var(--chip-bg);color:var(--pin)} .b-hold{background:#eceae4;color:var(--muted)}
+  .act .note{color:var(--muted);font-size:13.5px}
+  /* injected report body */
+  .rpt h3{font-family:'Fraunces',serif;font-weight:600;font-size:19px;margin:26px 0 8px;
+    padding-bottom:5px;border-bottom:1px solid var(--line)}
+  .rpt .lead{font-size:16px;color:var(--ink)}
+  .rpt p{color:#3a342e}
+  .rpt table.t{width:100%;border-collapse:collapse;margin:8px 0 6px;font-size:13.5px}
+  .rpt table.t th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--muted);padding:6px 10px;border-bottom:2px solid var(--line)}
+  .rpt table.t td{padding:8px 10px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:13px}
+  .rpt table.t tr:hover td{background:#faf8f2}
+  .empty{background:var(--paper);border:1px dashed var(--line);border-radius:8px;padding:30px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="back" href="/reports.html">← Reports Library</a>
+    <h1 id="title">Loading…</h1>
+    <div class="meta" id="meta"></div>
+  </header>
+  <div id="actions"></div>
+  <div id="body"></div>
+</div>
+<script>
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function badgeClass(a){ a=(a||'').toLowerCase();
+  if(a.includes('buy')||a.includes('keep')||a.includes('add')) return 'b-long';
+  if(a.includes('exit')||a.includes('cut')||a.includes('reduce')||a.includes('sell')||a.includes('draw')) return 'b-cut';
+  if(a.includes('trim')||a.includes('take')||a.includes('basis')||a.includes('gift')) return 'b-chip';
+  return 'b-hold'; }
+
+(async function(){
+  const id = new URLSearchParams(location.search).get('id');
+  if(!id){ document.getElementById('title').textContent='No report id'; return; }
+  try{
+    const r = await fetch('/.netlify/functions/get_reports?id='+encodeURIComponent(id), {cache:'no-store'});
+    const rec = await r.json();
+    if(!rec || rec.error){ document.getElementById('title').textContent='Report not found';
+      document.getElementById('body').innerHTML='<div class="empty">'+esc((rec&&rec.error)||'unknown')+'</div>'; return; }
+    document.title = rec.title || 'CIO Report';
+    document.getElementById('title').textContent = rec.title || 'CIO Report';
+    document.getElementById('meta').textContent = (rec.date||'') + (rec.type?(' · '+rec.type):'');
+    if(Array.isArray(rec.actions) && rec.actions.length){
+      document.getElementById('actions').innerHTML =
+        '<div class="actions"><h2>Recommended actions</h2>' +
+        rec.actions.map(a=>`<div class="act"><span class="tk">${esc(a.ticker)}</span>`+
+          `<span class="badge ${badgeClass(a.action)}">${esc(a.action)}</span>`+
+          `<span class="note">${esc(a.note||'')}</span></div>`).join('') + '</div>';
+    }
+    // rec.html is produced by our own workflow Code node (trusted), not user input.
+    document.getElementById('body').innerHTML = rec.html || '<div class="empty">No report body.</div>';
+  }catch(e){
+    document.getElementById('title').textContent='Error';
+    document.getElementById('body').innerHTML='<div class="empty">'+esc(e.message)+'</div>';
+  }
+})();
+</script>
+</body>
+</html>
