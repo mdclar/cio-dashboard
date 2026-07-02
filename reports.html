@@ -61,6 +61,21 @@
   .type.weekly{background:#e8eef4;color:#3a5c7d} .type.thesis{background:var(--long-bg);color:var(--long)}
   .empty{background:var(--paper);border:1px dashed var(--line);border-radius:8px;padding:30px;text-align:center;color:var(--muted)}
   .foot{margin-top:40px;color:var(--muted);font-size:12px}
+
+  .runbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 22px;
+    background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .runbar-label{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);margin-right:4px}
+  .runbtn{font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;
+    border:1px solid var(--line);background:#fff;color:var(--ink);padding:7px 14px;border-radius:8px;transition:all .12s}
+  .runbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .runbtn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .runbtn.primary:hover{background:#7a3227;color:#fff}
+  .runbtn:disabled{opacity:.5;cursor:default}
+  .toast{display:none;margin:0 0 20px;padding:11px 15px;border-radius:9px;font-size:13.5px;
+    background:#eef4ee;border:1px solid #cfe0d2;color:#2f6f4f}
+  .toast.show{display:block}
+  .toast .cd{font-family:'IBM Plex Mono',monospace;font-weight:600}
 </style>
 </head>
 <body>
@@ -71,6 +86,14 @@
     <div class="tag-line">Every CIO report, kept in one place. The pinned report and its recommended actions stay at the top.</div>
   </header>
 
+  <div class="runbar">
+    <span class="runbar-label">↻ Refresh reports</span>
+    <button class="runbtn" onclick="runReport('run-rebalance','Rebalance')">Rebalance</button>
+    <button class="runbtn" onclick="runReport('run-rotation','Rotation')">Rotation</button>
+    <button class="runbtn primary" onclick="runAll()">Refresh All</button>
+  </div>
+  <div id="toast" class="toast"></div>
+
   <div id="pinned"></div>
   <div class="sec-label" id="alllabel" style="display:none">All reports</div>
   <div id="list"></div>
@@ -80,6 +103,30 @@
 
 <script>
 const FN = '/.netlify/functions/get_reports';
+
+// ---- Manual report triggers (fire the n8n webhooks on Beast over Tailscale) ----
+// If your n8n host/address changes, edit N8N_BASE below.
+const N8N_BASE = 'http://beast.tail53158a.ts.net:5678';
+let _reloadTimer = null;
+function showToast(msg){ const t=document.getElementById('toast'); t.innerHTML=msg; t.classList.add('show'); }
+function runReport(path, label){
+  // Top-level popup navigation avoids browser mixed-content blocking of the HTTP webhook.
+  window.open(N8N_BASE + '/webhook/' + path, 'n8nrun', 'width=440,height=320');
+  let secs = 35;
+  showToast('⚙️ Running the <b>'+label+'</b> report… the library will refresh in <span class="cd" id="cd">'+secs+'s</span>. (You can close the little popup window.)');
+  clearInterval(_reloadTimer);
+  _reloadTimer = setInterval(()=>{ secs--; const cd=document.getElementById('cd'); if(cd) cd.textContent=secs+'s';
+    if(secs<=0){ clearInterval(_reloadTimer); location.reload(); } }, 1000);
+}
+function runAll(){
+  window.open(N8N_BASE + '/webhook/run-rebalance', 'n8nrun1', 'width=440,height=320');
+  setTimeout(()=>window.open(N8N_BASE + '/webhook/run-rotation', 'n8nrun2', 'width=440,height=320'), 1200);
+  let secs = 40;
+  showToast('⚙️ Running <b>both</b> reports… the library will refresh in <span class="cd" id="cd">'+secs+'s</span>. (You can close the popup windows.)');
+  clearInterval(_reloadTimer);
+  _reloadTimer = setInterval(()=>{ secs--; const cd=document.getElementById('cd'); if(cd) cd.textContent=secs+'s';
+    if(secs<=0){ clearInterval(_reloadTimer); location.reload(); } }, 1000);
+}
 
 function badgeClass(action){
   const a = (action||'').toLowerCase();
