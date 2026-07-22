@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stock Bullpen — CIO Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --ink-faint: #8a8a8a;
+    --rule: #d9d4c8;
+    --rule-soft: #ebe7dc;
+    --paper: #fdfcf8;
+    --accent: #8b3a2f;
+    --sig-buy: #3f7a4e;
+    --sig-near: #b1782f;
+    --sig-wash: #a33f2c;
+    --sig-turn: #3a5a7a;
+    --gold: #9a7328;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  main { padding: 44px clamp(20px, 5vw, 72px) 80px; max-width: 1180px; margin: 0 auto; }
+
+  .masthead {
+    border-top: 3px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding: 22px 0 16px;
+    margin-bottom: 10px;
+    display: flex; align-items: baseline; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .masthead h1 { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: clamp(26px, 4vw, 40px); letter-spacing: -0.02em; line-height: 1; }
+  .mast-tools { display: flex; align-items: center; gap: 14px; }
+  .back-link, .stamp { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-faint); }
+  .back-link:hover { color: var(--accent); }
+  .refresh-btn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+    background: var(--ink); color: var(--bg);
+    border: 1px solid var(--ink); border-radius: 4px; padding: 6px 12px;
+  }
+  .refresh-btn:hover { background: var(--accent); border-color: var(--accent); }
+  .refresh-btn:disabled { opacity: .5; cursor: default; }
+  .refresh-note { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--ink-faint); letter-spacing: .06em; margin: 8px 0 0; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; margin: 26px 0 34px; }
+  .stat { background: var(--paper); border: 1px solid var(--rule); padding: 14px 16px; }
+  .stat-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 4px; }
+  .stat-value { font-family: 'Fraunces', Georgia, serif; font-size: 24px; font-weight: 600; }
+
+  section { margin-bottom: 40px; }
+  section > h3 {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--ink-soft);
+    margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  }
+  .toggle { font-size: 10px; color: var(--ink-faint); cursor: pointer; letter-spacing: .1em; user-select: none; }
+  .toggle:hover { color: var(--accent); }
+
+  /* Methodology */
+  .doc { background: var(--paper); border: 1px solid var(--rule); padding: 24px 26px; }
+  .doc h4 { font-family: 'Fraunces', Georgia, serif; font-size: 17px; font-weight: 600; margin: 18px 0 8px; }
+  .doc h4:first-child { margin-top: 0; }
+  .doc p { margin-bottom: 10px; color: var(--ink-soft); }
+  .doc table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 13px; }
+  .doc th { text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rule); }
+  .doc td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  .doc code, .formula { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: var(--rule-soft); padding: 1px 5px; border-radius: 3px; }
+  .sig-pill { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .sig-pill.buy { color: var(--sig-buy); } .sig-pill.near { color: var(--sig-near); }
+  .sig-pill.wash { color: var(--sig-wash); } .sig-pill.turn { color: var(--sig-turn); }
+  .doc ol { margin: 4px 0 12px 20px; color: var(--ink-soft); }
+  .doc ol li { margin-bottom: 4px; }
+
+  /* Data tables */
+  .cat-head {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--gold); font-weight: 600; margin: 26px 0 8px;
+  }
+  table.pen { width: 100%; border-collapse: collapse; background: var(--paper); border: 1px solid var(--rule); font-size: 13px; }
+  table.pen th {
+    text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+    padding: 8px 10px; border-bottom: 1px solid var(--rule); white-space: nowrap;
+    background: var(--paper); position: sticky; top: 0;
+  }
+  table.pen td { padding: 8px 10px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  table.pen tr.main:hover { background: #f8f6ef; cursor: pointer; }
+  td.tk { font-family: 'IBM Plex Mono', monospace; font-weight: 600; white-space: nowrap; }
+  td.co { color: var(--ink-soft); min-width: 140px; }
+  td.num { font-family: 'IBM Plex Mono', monospace; text-align: right; white-space: nowrap; }
+  td.rating { color: var(--gold); font-weight: 500; white-space: nowrap; }
+  tr.thesis-row td {
+    background: #faf8f2; color: var(--ink-soft); font-size: 12.5px;
+    padding: 10px 14px 12px; border-bottom: 1px solid var(--rule);
+  }
+  tr.thesis-row .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); margin-right: 8px; }
+  .signal-cell { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .loading, .empty-state { color: var(--ink-faint); font-style: italic; padding: 16px 0; }
+  .error-msg { color: #9a3525; font-size: 12px; padding: 8px 0; }
+
+  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--rule); font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--ink-faint); letter-spacing: 0.08em; text-transform: uppercase; }
+  @media (max-width: 760px) {
+    td.co { display: none; }
+    .hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <div class="masthead">
+    <h1>Stock Bullpen</h1>
+    <div class="mast-tools">
+      <span class="stamp" id="stamp">Loading…</span>
+      <button class="refresh-btn" id="bp-refresh" onclick="refreshBullpen()">↻ Refresh Bullpen</button>
+      <a class="back-link" href="/cio_dashboard.html">← Daily Brief</a>
+    </div>
+  </div>
+  <div class="refresh-note">Refresh re-pulls prices &amp; technicals, recomputes every Buy Signal, rewrites 4_Stock_Bullpen, and republishes this page. Your Rating / Target Entry / Notes columns are never touched.</div>
+
+  <div class="stats" id="stats"></div>
+
+  <section>
+    <h3>
+      <span>Buy Signal Methodology</span>
+      <span class="toggle" id="doc-toggle" onclick="toggleDoc()">HIDE ▲</span>
+    </h3>
+    <div class="doc" id="doc">
+      <h4>What the signals mean</h4>
+      <p>Every refresh, the QC_Bullpen_Refresh workflow scores each name and writes one of these to the Buy Signal column. A stock can carry more than one (joined with "·"). Priority for action runs top to bottom:</p>
+      <table>
+        <tr><th>Signal</th><th>Meaning</th><th>Exact rule</th></tr>
+        <tr>
+          <td><span class="sig-pill buy">AT TARGET</span></td>
+          <td>Price has reached your buy zone. Strongest actionable signal — your rating × this signal is the trade trigger.</td>
+          <td><span class="formula">price ≤ Target Entry</span> (your column F)</td>
+        </tr>
+        <tr>
+          <td><span class="sig-pill near">NEAR +x%</span></td>
+          <td>Price is approaching your buy zone; x shows how far above your target it sits.</td>
+          <td><span class="formula">price ≤ Target Entry × 1.05</span> (within 5% above)</td>
+        </tr>
+        <tr>
+          <td><span class="sig-pill wash">WASHOUT</span></td>
+          <td>Oversold capitulation — potential value entry on quality names, but confirm the thesis first; falling knives also print this.</td>
+          <td><span class="formula">RSI ≤ 30</span></td>
+        </tr>
+        <tr>
+          <td><span class="sig-pill turn">TURN n/4</span></td>
+          <td>Momentum turning back up. 4/4 = all four checks confirm an uptrend; fires at 3 of 4 or better.</td>
+          <td>Count of the four checks below; shows when <span class="formula">≥ 3</span> pass</td>
+        </tr>
+        <tr>
+          <td><span class="sig-pill" style="color:var(--ink-faint)">— (no target)</span></td>
+          <td>No signal firing. AT TARGET and NEAR can't evaluate until you set a Target Entry for that row.</td>
+          <td>—</td>
+        </tr>
+      </table>
+
+      <h4>The four TURN checks</h4>
+      <ol>
+        <li><strong>Above the 200-day</strong> — <span class="formula">price &gt; MA200</span>. The long-term trend line is reclaimed.</li>
+        <li><strong>MACD bullish</strong> — <span class="formula">MACD trend = bullish</span>. Short-term momentum has crossed up.</li>
+        <li><strong>RSI in the healthy zone</strong> — <span class="formula">50 ≤ RSI ≤ 70</span>. Recovered from oversold without being overbought.</li>
+        <li><strong>Positive 10-day momentum</strong> — <span class="formula">10-day change &gt; 0</span>. Price is actually moving up, not just basing.</li>
+      </ol>
+      <p>This is the "trend-turn" logic from the Cramer chart discussion: 200-DMA reclaim + MACD crossover + RSI recovery + positive momentum. The sheet shows the 5-day column for a quick read, but the TURN check itself uses the 10-day change.</p>
+
+      <h4>How Score is computed (column I)</h4>
+      <p>Score is the 5-factor composite from the July 2026 pen rescore, out of 100:</p>
+      <table>
+        <tr><th>Factor</th><th>Weight</th><th>What it measures</th></tr>
+        <tr><td>Rule #1 quality</td><td class="num">25</td><td>Moat, ROIC, balance sheet, Big-5 growth consistency</td></tr>
+        <tr><td>Margin of safety</td><td class="num">20</td><td>Discount to value — drawdown vs. intrinsic worth, analyst PT gap</td></tr>
+        <tr><td>Sector thesis</td><td class="num">20</td><td>Fit with the AI-infra / space / quantum / drones / robotics theses</td></tr>
+        <tr><td>Catalyst strength</td><td class="num">20</td><td>Nearness and credibility of the thing that re-rates it</td></tr>
+        <tr><td>Timing</td><td class="num">15</td><td>Technical setup — where in the drawdown/recovery it sits</td></tr>
+      </table>
+      <p>≥65 made the core cut (plus 9 frontier specs kept below that line). Score ranks conviction in the <em>business + setup</em>; the Buy Signal tells you whether <em>today's price</em> is an entry. The actionable cross is your Rating × Signal — e.g. Strong Buy + AT TARGET floats to the top of the Daily Brief rail.</p>
+
+      <h4>What survives a refresh</h4>
+      <p>Columns E–G (<strong>My Rating, Target Entry, My Notes</strong>) are yours and persist across refreshes. Everything else — thesis, score, price, technicals, flags, Buy Signal — is workflow-owned and rewritten daily at ~4:45 PM MT and on demand from the Refresh button.</p>
+    </div>
+  </section>
+
+  <section>
+    <h3><span>The Pen — grouped by category</span></h3>
+    <div id="pen" class="loading">Loading bullpen…</div>
+  </section>
+
+  <footer><span id="meta-info">—</span></footer>
+</main>
+
+<script>
+const N8N_BASE = 'http://beast.tail53158a.ts.net:5678';
+const NAME_FALLBACK = {"MPWR":"Monolithic Power Systems","SNDK":"SanDisk Corp","VRT":"Vertiv Holdings","KLAC":"KLA Corp","SNPS":"Synopsys Inc","MRVL":"Marvell Technology","PL":"Planet Labs PBC","Q":"Qnity Electronics","STX":"Seagate Technology","GEV":"GE Vernova","LITE":"Lumentum Holdings","VRTX":"Vertex Pharmaceuticals","WDC":"Western Digital","CAH":"Cardinal Health","GLW":"Corning Inc","KKR":"KKR & Co","BE":"Bloom Energy","DHR":"Danaher Corp","LIN":"Linde PLC","NOC":"Northrop Grumman","SPOT":"Spotify Technology","TPL":"Texas Pacific Land","WFC":"Wells Fargo","IRM":"Iron Mountain","MTSI":"MACOM Technology","SHOP":"Shopify Inc","QNT":"Quantinuum Inc","SYM":"Symbotic Inc","FLY":"Firefly Aerospace","VOYG":"Voyager Technologies","LUNR":"Intuitive Machines","RCAT":"Red Cat Holdings","KRMN":"Karman Holdings","QBTS":"D-Wave Quantum","RGTI":"Rigetti Computing"};
+const CAT_ORDER = ['Data Center & AI Infra','Quality Dislocation','Space','Quantum','Drones','Robotics'];
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function pick(it, keys) {
+  for (const k of keys) { if (it[k] != null && it[k] !== '') return it[k]; }
+  return '';
+}
+function sigClass(s) {
+  const t = (s || '').toUpperCase();
+  if (t.includes('AT TARGET')) return 'buy';
+  if (t.includes('NEAR')) return 'near';
+  if (t.includes('WASH')) return 'wash';
+  if (t.includes('TURN')) return 'turn';
+  return '';
+}
+function fmtNum(v) {
+  if (v == null || v === '') return '—';
+  const s = String(v);
+  return escapeHtml(s.startsWith('$') ? s : s);
+}
+
+async function loadPen() {
+  const node = document.getElementById('pen');
+  try {
+    const res = await fetch('/.netlify/functions/get_bullpen', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.empty || !Array.isArray(data.items) || !data.items.length) {
+      node.classList.remove('loading'); node.classList.add('empty-state');
+      node.textContent = data.message || 'No bullpen data yet. Hit Refresh.';
+      return;
+    }
+    const items = data.items;
+
+    // Column availability — only show columns the payload actually carries
+    const has = {
+      rating:  items.some(it => pick(it, ['rating','myRating','my_rating'])),
+      target:  items.some(it => pick(it, ['target','targetEntry','target_entry'])),
+      score:   items.some(it => pick(it, ['score'])),
+      price:   items.some(it => pick(it, ['price'])),
+      rsi:     items.some(it => pick(it, ['rsi','RSI'])),
+      ma:      items.some(it => pick(it, ['maTrend','ma_trend','ma'])),
+      macd:    items.some(it => pick(it, ['macd','macdTrend','macd_trend'])),
+      chg:     items.some(it => pick(it, ['chg5d','change5d','fiveDay','d5'])),
+      flags:   items.some(it => pick(it, ['flags'])),
+      thesis:  items.some(it => pick(it, ['thesis'])),
+      notes:   items.some(it => pick(it, ['notes','myNotes','my_notes']))
+    };
+
+    // Stats
+    const sigCount = re => items.filter(it => re.test(String(it.signal || ''))).length;
+    const stats = [
+      ['Names', items.length],
+      ['At Target', sigCount(/AT TARGET/i)],
+      ['Near', sigCount(/NEAR/i)],
+      ['Washout', sigCount(/WASH/i)],
+      ['Turning', sigCount(/TURN/i)],
+      ['Targets Set', items.filter(it => pick(it, ['target','targetEntry','target_entry'])).length]
+    ];
+    document.getElementById('stats').innerHTML = stats.map(([k,v]) =>
+      `<div class="stat"><div class="stat-label">${escapeHtml(k)}</div><div class="stat-value">${escapeHtml(v)}</div></div>`
+    ).join('');
+
+    // Group by category
+    const groups = {};
+    for (const it of items) { const c = it.category || 'Other'; (groups[c] = groups[c] || []).push(it); }
+    const cats = Object.keys(groups).sort((a,b) => {
+      const ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b);
+      return (ia<0?99:ia) - (ib<0?99:ib);
+    });
+
+    let html = '';
+    for (const c of cats) {
+      const rows = groups[c].slice().sort((a,b) => (Number(b.score)||0) - (Number(a.score)||0));
+      html += `<div class="cat-head">${escapeHtml(c)} · ${rows.length}</div>`;
+      html += '<table class="pen"><thead><tr>';
+      html += '<th>Ticker</th><th>Company</th>';
+      if (has.rating) html += '<th>Rating</th>';
+      if (has.target) html += '<th>Target</th>';
+      if (has.price)  html += '<th>Price</th>';
+      if (has.score)  html += '<th>Score</th>';
+      if (has.rsi)    html += '<th class="hide-sm">RSI</th>';
+      if (has.ma)     html += '<th class="hide-sm">MA Trend</th>';
+      if (has.macd)   html += '<th class="hide-sm">MACD</th>';
+      if (has.chg)    html += '<th class="hide-sm">5d %</th>';
+      html += '<th>Signal</th></tr></thead><tbody>';
+      for (const it of rows) {
+        const tk = escapeHtml(it.ticker || '');
+        const nm = escapeHtml(it.name || NAME_FALLBACK[(it.ticker||'').toUpperCase()] || '');
+        const sc = sigClass(it.signal);
+        const thesis = pick(it, ['thesis']);
+        const notes = pick(it, ['notes','myNotes','my_notes']);
+        const flags = pick(it, ['flags']);
+        const hasDetail = thesis || notes || flags;
+        html += `<tr class="main"${hasDetail ? ` onclick="toggleThesis('${tk}')"` : ''}>`;
+        html += `<td class="tk">${tk}</td><td class="co">${nm}</td>`;
+        if (has.rating) html += `<td class="rating">${escapeHtml(pick(it, ['rating','myRating','my_rating']) || '—')}</td>`;
+        if (has.target) { const t = pick(it, ['target','targetEntry','target_entry']); html += `<td class="num">${t ? '$' + escapeHtml(String(t).replace(/^\$/, '')) : '—'}</td>`; }
+        if (has.price)  { const p = pick(it, ['price']); html += `<td class="num">${p ? (String(p).startsWith('$') ? escapeHtml(p) : '$' + escapeHtml(p)) : '—'}</td>`; }
+        if (has.score)  html += `<td class="num">${fmtNum(pick(it, ['score']))}</td>`;
+        if (has.rsi)    html += `<td class="num hide-sm">${fmtNum(pick(it, ['rsi','RSI']))}</td>`;
+        if (has.ma)     html += `<td class="hide-sm">${escapeHtml(pick(it, ['maTrend','ma_trend','ma']) || '—')}</td>`;
+        if (has.macd)   html += `<td class="hide-sm">${escapeHtml(pick(it, ['macd','macdTrend','macd_trend']) || '—')}</td>`;
+        if (has.chg)    html += `<td class="num hide-sm">${fmtNum(pick(it, ['chg5d','change5d','fiveDay','d5']))}</td>`;
+        html += `<td class="signal-cell sig-pill ${sc}">${escapeHtml(it.signal || '—')}</td></tr>`;
+        if (hasDetail) {
+          const cols = 3 + ['rating','target','price','score','rsi','ma','macd','chg'].filter(k => has[k]).length;
+          let d = '';
+          if (thesis) d += `<span class="lbl">Thesis</span>${escapeHtml(thesis)}`;
+          if (flags)  d += `${d ? '<br>' : ''}<span class="lbl">Flags</span>${escapeHtml(flags)}`;
+          if (notes)  d += `${d ? '<br>' : ''}<span class="lbl">My Notes</span>${escapeHtml(notes)}`;
+          html += `<tr class="thesis-row" id="th-${tk}" style="display:none"><td colspan="${cols}">${d}</td></tr>`;
+        }
+      }
+      html += '</tbody></table>';
+    }
+    node.classList.remove('loading');
+    node.innerHTML = html;
+
+    const stamp = data.generated_at || data.saved_at;
+    document.getElementById('stamp').textContent = stamp ? 'Updated ' + stamp : '';
+    const meta = [];
+    if (data.saved_at) meta.push('Published ' + new Date(data.saved_at).toLocaleString());
+    meta.push('Source: 4_Stock_Bullpen via QC_Bullpen_Refresh');
+    document.getElementById('meta-info').textContent = meta.join(' · ');
+  } catch (e) {
+    node.classList.remove('loading');
+    node.innerHTML = '<div class="error-msg">Bullpen load failed: ' + escapeHtml(e.message) + '</div>';
+    document.getElementById('stamp').textContent = '';
+  }
+}
+
+function toggleThesis(tk) {
+  const row = document.getElementById('th-' + tk);
+  if (row) row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+function toggleDoc() {
+  const doc = document.getElementById('doc');
+  const t = document.getElementById('doc-toggle');
+  const hidden = doc.style.display === 'none';
+  doc.style.display = hidden ? '' : 'none';
+  t.textContent = hidden ? 'HIDE ▲' : 'SHOW ▼';
+}
+
+function refreshBullpen() {
+  const btn = document.getElementById('bp-refresh');
+  const node = document.getElementById('pen');
+  window.open(N8N_BASE + '/webhook/bullpen-refresh', 'bprun', 'width=440,height=320');
+  if (btn) btn.disabled = true;
+  let secs = 25;
+  node.classList.add('loading');
+  node.textContent = 'Refreshing… reloading in ' + secs + 's';
+  const timer = setInterval(() => {
+    secs--;
+    if (secs > 0) { node.textContent = 'Refreshing… reloading in ' + secs + 's'; }
+    else { clearInterval(timer); loadPen(); if (btn) btn.disabled = false; }
+  }, 1000);
+}
+
+loadPen();
+</script>
+</body>
+</html>

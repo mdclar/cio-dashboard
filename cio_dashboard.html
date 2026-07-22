@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -333,6 +333,9 @@
   .bp-meta { font-size: 11px; color: var(--side-ink-soft); margin-top: 3px; }
   .bp-rating { color: #d8a85a; font-weight: 500; }
   .bp-stamp { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--side-ink-soft); margin-top: 10px; letter-spacing: .05em; }
+  .bp-nm { font-size: 11px; color: var(--side-ink-soft); margin-top: 1px; }
+  .action-name { font-size: 11px; color: var(--side-ink-soft); margin-top: -2px; margin-bottom: 4px; font-style: italic; }
+  aside h2 .h2-tools { display: flex; align-items: center; gap: 8px; }
 </style>
 <link rel="stylesheet" href="/assets/cio_chat.css">
 <script src="/assets/cio_chat.js" defer></script>
@@ -352,6 +355,7 @@
       <a href="/portfolio.html">💼 Portfolio Mirror</a>
       <a href="/portfolio_briefs.html">📊 Portfolio Briefs</a>
       <a href="/reports.html">🗂️ Reports Library</a>
+      <a href="/bullpen.html">🎯 Bullpen Detail</a>
     </div>
   </aside>
 
@@ -404,7 +408,10 @@
       <div class="rail-col">
         <h2>
           <span>Bullpen Actions</span>
-          <button class="refresh-btn" id="bp-refresh" onclick="refreshBullpen()">↻ Refresh</button>
+          <span class="h2-tools">
+            <a href="/bullpen.html">DETAIL →</a>
+            <button class="refresh-btn" id="bp-refresh" onclick="refreshBullpen()">↻ Refresh</button>
+          </span>
         </h2>
         <div id="bullpen-content" class="loading">Loading…</div>
       </div>
@@ -421,6 +428,36 @@ const ENDPOINTS = {
   bullpen: '/.netlify/functions/get_bullpen'
 };
 const N8N_BASE = 'http://beast.tail53158a.ts.net:5678';
+
+// Ticker -> company name. Seeded with the bullpen list; enriched at load time
+// with live names from the portfolio snapshot (get_portfolio) so Caretaker
+// items resolve too. Workflow payloads that include a "name" field win.
+const TICKER_NAMES = {"MPWR":"Monolithic Power Systems","SNDK":"SanDisk Corp","VRT":"Vertiv Holdings","KLAC":"KLA Corp","SNPS":"Synopsys Inc","MRVL":"Marvell Technology","PL":"Planet Labs PBC","Q":"Qnity Electronics","STX":"Seagate Technology","GEV":"GE Vernova","LITE":"Lumentum Holdings","VRTX":"Vertex Pharmaceuticals","WDC":"Western Digital","CAH":"Cardinal Health","GLW":"Corning Inc","KKR":"KKR & Co","BE":"Bloom Energy","DHR":"Danaher Corp","LIN":"Linde PLC","NOC":"Northrop Grumman","SPOT":"Spotify Technology","TPL":"Texas Pacific Land","WFC":"Wells Fargo","IRM":"Iron Mountain","MTSI":"MACOM Technology","SHOP":"Shopify Inc","QNT":"Quantinuum Inc","SYM":"Symbotic Inc","FLY":"Firefly Aerospace","VOYG":"Voyager Technologies","LUNR":"Intuitive Machines","RCAT":"Red Cat Holdings","KRMN":"Karman Holdings","QBTS":"D-Wave Quantum","RGTI":"Rigetti Computing"};
+
+async function loadTickerNames() {
+  try {
+    const res = await fetch('/.netlify/functions/get_portfolio', { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    const rows = data.positions || data.items || data.rows || [];
+    for (const r of rows) {
+      const tk = (r.ticker || r.Ticker || '').trim().toUpperCase();
+      const nm = r.name || r.Name;
+      if (tk && nm && !TICKER_NAMES[tk]) TICKER_NAMES[tk] = nm;
+    }
+  } catch (e) { /* names are decorative — never block the rail */ }
+}
+
+function resolveName(item, textFallback) {
+  if (item && item.name) return item.name;
+  const explicit = (item && item.ticker ? String(item.ticker) : '').trim().toUpperCase();
+  if (explicit && TICKER_NAMES[explicit]) return TICKER_NAMES[explicit];
+  // Scan the title/desc for a known ticker token
+  const hay = String(textFallback || '');
+  const tokens = hay.match(/\b[A-Z]{1,5}\b/g) || [];
+  for (const t of tokens) { if (TICKER_NAMES[t]) return TICKER_NAMES[t]; }
+  return '';
+}
 
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({
@@ -563,6 +600,7 @@ async function loadActions() {
       <div class="action-item priority-${escapeHtml(it.priority || 'Medium')}">
         <div class="action-priority">${escapeHtml(it.priority || 'Medium')}</div>
         <div class="action-title">${escapeHtml(it.title || '')}</div>
+        ${(() => { const nm = resolveName(it, (it.title || '') + ' ' + (it.description || '')); return nm ? `<div class="action-name">${escapeHtml(nm)}</div>` : ''; })()}
         <div class="action-desc">${escapeHtml(it.description || '')}</div>
         ${it.source ? `<div class="action-source">via ${escapeHtml(it.source)}</div>` : ''}
       </div>
@@ -606,6 +644,7 @@ async function loadBullpen() {
               <span class="bp-tk">${escapeHtml(it.ticker || '')}</span>
               <span class="bp-sig ${sc}">${escapeHtml(it.signal || '')}</span>
             </div>
+            ${(() => { const nm = resolveName(it, ''); return nm ? `<div class="bp-nm">${escapeHtml(nm)}</div>` : ''; })()}
             <div class="bp-meta">${rating}${bits.join(' · ')}</div>
           </div>`;
       }
@@ -642,8 +681,7 @@ function refreshBullpen() {
 
 loadBrief();
 loadCalendar();
-loadActions();
-loadBullpen();
+loadTickerNames().then(() => { loadActions(); loadBullpen(); });
 </script>
 </body>
 </html>
