@@ -3,10 +3,12 @@
 // Stores conversation in Blobs key 'chat:thread' (single ongoing thread)
 
 const { getStore } = require('@netlify/blobs');
+const { PERSPECTIVE } = require('./perspective.js');
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const MODEL = 'claude-sonnet-4-5';
-const MAX_HISTORY = 30; // last N turns sent to Claude
+const MODEL = 'claude-fable-5';
+const BEAST_MCP_URL = process.env.BEAST_MCP_URL || '';
+const MAX_HISTORY = 14; // last N turns sent to Claude
 const MAX_STORED = 200; // max turns kept in storage
 
 async function fetchJson(url) {
@@ -22,8 +24,8 @@ function buildSystemPrompt(brief, portfolio, calendar) {
 
 VOICE & STYLE:
 - Adaptive: be sharp and decisive by default, but adjust based on Marshall's signals.
-- If Marshall says "be more direct" or "TL;DR" — cut everything except the conclusion.
-- If Marshall says "walk me through it" or "explain" — go step-by-step.
+- If Marshall says "be more direct" or "TL;DR" ï¿½ cut everything except the conclusion.
+- If Marshall says "walk me through it" or "explain" ï¿½ go step-by-step.
 - Never repeat what's already on the dashboard unless asked. He can see the brief.
 - Cite specific tickers, numbers, and percentages when you have them.
 - No fluff, no preamble, no "Great question!" energy.
@@ -31,11 +33,16 @@ VOICE & STYLE:
 
 CONVERSATION RULES:
 - This is an ongoing dialogue with persistent memory. Reference prior conversation naturally.
-- If you don't know something current (today's price, breaking news), say so.
+- You have live tools: web search (news, earnings, after-hours moves, sentiment) and Beast MCP (portfolio, prices, technicals, history, sheets). Use them before ever claiming you lack data.
+- Be surgical with tools: request bounded ranges and compact mode; make only the calls the question needs.
 - Markdown is supported in your replies (bold, lists, etc.).
 - Keep replies to 2-4 paragraphs unless explicitly asked for more depth.
 
 `;
+
+  if (typeof PERSPECTIVE === 'string' && PERSPECTIVE.trim()) {
+    ctx += `\n=== CIO PERSPECTIVE (canonical Ã¢â‚¬â€ follow this) ===\n${PERSPECTIVE.trim()}\n`;
+  }
 
   if (brief && !brief.empty) {
     ctx += `\n=== TODAY'S BRIEF (${brief.today_label || 'recent'}) ===\n`;
@@ -137,14 +144,25 @@ exports.handler = async (event) => {
       headers: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'mcp-client-2025-04-04',
         'content-type': 'application/json'
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 2000,
+        max_tokens: 4000,
         temperature: 0.4,
-        system: systemPrompt,
-        messages: apiMessages
+        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
+        messages: apiMessages,
+        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
+        ...(BEAST_MCP_URL ? { mcp_servers: [{
+          type: 'url',
+          url: BEAST_MCP_URL,
+          name: 'beast',
+          tool_configuration: {
+            enabled: true,
+            allowed_tools: ['get_portfolio', 'get_price', 'fmp_history', 'get_sheet', 'get_risk_dashboard', 'get_judge_scores', 'get_time']
+          }
+        }] } : {})
       })
     });
 
