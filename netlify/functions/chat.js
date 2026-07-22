@@ -150,7 +150,6 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 4000,
-        temperature: 0.4,
         system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         messages: apiMessages,
         tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
