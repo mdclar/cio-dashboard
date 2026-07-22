@@ -1,0 +1,26 @@
+﻿// GET /.netlify/functions/get_bullpen
+const { getStore } = require('@netlify/blobs');
+
+exports.handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Cache-Control': 'no-store',
+    'Content-Type': 'application/json',
+  };
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers, body: '' };
+  if (event.httpMethod !== 'GET') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'method_not_allowed' }) };
+  }
+  try {
+    const store = getStore({ name: 'cio_dashboard', siteID: process.env.NETLIFY_SITE_ID, token: process.env.NETLIFY_BLOBS_TOKEN });
+    const record = await store.get('bullpen:latest', { type: 'json' });
+    if (!record) {
+      return { statusCode: 200, headers, body: JSON.stringify({ empty: true, message: 'No bullpen data yet. Hit Refresh.' }) };
+    }
+    return { statusCode: 200, headers, body: JSON.stringify({ saved_at: record.saved_at, generated_at: record.generated_at, items: Array.isArray(record.items) ? record.items : [] }) };
+  } catch (e) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'storage_failed', details: e.message }) };
+  }
+};

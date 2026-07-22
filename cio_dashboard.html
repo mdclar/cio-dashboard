@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -41,7 +41,7 @@
 
   .layout {
     display: grid;
-    grid-template-columns: 280px 1fr 320px;
+    grid-template-columns: 260px 1fr 560px;
     min-height: 100vh;
   }
   @media (max-width: 1100px) {
@@ -302,6 +302,37 @@
   }
   .quick-links a { display: block; padding: 4px 0; color: var(--side-ink); }
   .quick-links a:hover { color: var(--accent); }
+
+  /* Two-column right rail: Caretaker + Bullpen */
+  .rail-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 1500px) { .rail-cols { grid-template-columns: 1fr; } }
+  .refresh-btn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600;
+    letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+    background: transparent; color: var(--side-ink-soft);
+    border: 1px solid var(--side-rule); border-radius: 5px; padding: 4px 8px;
+  }
+  .refresh-btn:hover { color: var(--side-ink); border-color: var(--side-ink-soft); }
+  .refresh-btn:disabled { opacity: .5; cursor: default; }
+  .bp-cat {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: #d8a85a; margin: 16px 0 8px; font-weight: 600;
+  }
+  .bp-cat:first-child { margin-top: 0; }
+  .bp-item {
+    background: rgba(255,255,255,0.03); border-left: 3px solid var(--side-ink-soft);
+    padding: 9px 12px; margin-bottom: 9px; border-radius: 0 4px 4px 0;
+  }
+  .bp-item.sig-buy  { border-left-color: var(--medium); }
+  .bp-item.sig-near { border-left-color: var(--high); }
+  .bp-item.sig-wash { border-left-color: var(--critical); }
+  .bp-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .bp-tk { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; color: var(--side-ink); }
+  .bp-sig { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .bp-sig.sig-buy { color: #7fae8a; } .bp-sig.sig-near { color: #e0a866; } .bp-sig.sig-wash { color: #d98a7a; }
+  .bp-meta { font-size: 11px; color: var(--side-ink-soft); margin-top: 3px; }
+  .bp-rating { color: #d8a85a; font-weight: 500; }
+  .bp-stamp { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--side-ink-soft); margin-top: 10px; letter-spacing: .05em; }
 </style>
 <link rel="stylesheet" href="/assets/cio_chat.css">
 <script src="/assets/cio_chat.js" defer></script>
@@ -365,8 +396,19 @@
   </main>
 
   <aside id="right-sidebar">
-    <h2>Recommended Actions</h2>
-    <div id="actions-content" class="loading">Loading…</div>
+    <div class="rail-cols">
+      <div class="rail-col">
+        <h2>Caretaker Actions</h2>
+        <div id="actions-content" class="loading">Loading…</div>
+      </div>
+      <div class="rail-col">
+        <h2>
+          <span>Bullpen Actions</span>
+          <button class="refresh-btn" id="bp-refresh" onclick="refreshBullpen()">↻ Refresh</button>
+        </h2>
+        <div id="bullpen-content" class="loading">Loading…</div>
+      </div>
+    </div>
   </aside>
 
 </div>
@@ -375,8 +417,10 @@
 const ENDPOINTS = {
   brief: '/.netlify/functions/get_briefs',
   calendar: '/.netlify/functions/get_calendar?days=7',
-  actions: '/.netlify/functions/get_actions'
+  actions: '/.netlify/functions/get_actions',
+  bullpen: '/.netlify/functions/get_bullpen'
 };
+const N8N_BASE = 'http://beast.tail53158a.ts.net:5678';
 
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({
@@ -528,9 +572,78 @@ async function loadActions() {
   }
 }
 
+async function loadBullpen() {
+  const node = document.getElementById('bullpen-content');
+  try {
+    const res = await fetch(ENDPOINTS.bullpen, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.empty || !Array.isArray(data.items) || !data.items.length) {
+      setEmpty(node, data.message || 'No active bullpen signals.', 'empty-state-side');
+      return;
+    }
+    const CAT_ORDER = ['Data Center & AI Infra','Quality Dislocation','Space','Quantum','Drones','Robotics'];
+    const groups = {};
+    for (const it of data.items) { const c = it.category || 'Other'; (groups[c] = groups[c] || []).push(it); }
+    const cats = Object.keys(groups).sort((a,b) => {
+      const ia = CAT_ORDER.indexOf(a), ib = CAT_ORDER.indexOf(b);
+      return (ia<0?99:ia) - (ib<0?99:ib);
+    });
+    node.classList.remove('loading');
+    let html = '';
+    for (const c of cats) {
+      html += `<div class="bp-cat">${escapeHtml(c)}</div>`;
+      for (const it of groups[c]) {
+        const sc = sigClass(it.signal);
+        const bits = [];
+        if (it.price != null && it.price !== '') bits.push('$' + escapeHtml(it.price));
+        if (it.score) bits.push('Score ' + escapeHtml(it.score));
+        if (it.target) bits.push('Tgt $' + escapeHtml(it.target));
+        const rating = it.rating ? `<span class="bp-rating">${escapeHtml(it.rating)}</span> · ` : '';
+        html += `
+          <div class="bp-item ${sc}">
+            <div class="bp-top">
+              <span class="bp-tk">${escapeHtml(it.ticker || '')}</span>
+              <span class="bp-sig ${sc}">${escapeHtml(it.signal || '')}</span>
+            </div>
+            <div class="bp-meta">${rating}${bits.join(' · ')}</div>
+          </div>`;
+      }
+    }
+    if (data.generated_at) html += `<div class="bp-stamp">Updated ${escapeHtml(data.generated_at)}</div>`;
+    node.innerHTML = html;
+  } catch (e) {
+    setError(node, 'Bullpen load failed: ' + e.message);
+  }
+}
+
+function sigClass(s) {
+  const t = (s || '').toUpperCase();
+  if (t.includes('WASH')) return 'sig-wash';
+  if (t.includes('NEAR')) return 'sig-near';
+  return 'sig-buy';
+}
+
+function refreshBullpen() {
+  const btn = document.getElementById('bp-refresh');
+  const node = document.getElementById('bullpen-content');
+  window.open(N8N_BASE + '/webhook/bullpen-refresh', 'bprun', 'width=440,height=320');
+  if (btn) btn.disabled = true;
+  let secs = 20;
+  node.classList.remove('empty-state-side');
+  node.classList.add('loading');
+  node.textContent = 'Refreshing… reloading in ' + secs + 's';
+  const timer = setInterval(() => {
+    secs--;
+    if (secs > 0) { node.textContent = 'Refreshing… reloading in ' + secs + 's'; }
+    else { clearInterval(timer); loadBullpen(); if (btn) btn.disabled = false; }
+  }, 1000);
+}
+
 loadBrief();
 loadCalendar();
 loadActions();
+loadBullpen();
 </script>
 </body>
 </html>
